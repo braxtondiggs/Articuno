@@ -1,6 +1,6 @@
 'use strict';
 import * as express from 'express';
-import YoutubeRouter from './youtube';
+import YoutubeRouter from './endpoints/youtube';
 
 class App {
   public express: express.Application;
