@@ -29,6 +29,10 @@ export const VideoSchema: Schema = new Schema({
   url: {
     required: true,
     type: String
+  },
+  youtubeUrl: {
+    required: true,
+    type: String
   }
 }, {
     timestamps: true

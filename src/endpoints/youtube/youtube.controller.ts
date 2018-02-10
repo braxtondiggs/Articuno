@@ -1,9 +1,7 @@
 'use strict';
 import { each } from 'async';
 import { NextFunction, Request, Response } from 'express';
-import * as fs from 'fs';
 import { forEach, includes, map, reject, size, slice } from 'lodash';
-import * as path from 'path';
 import { IVideo, Video } from '../../schemas/video';
 const Youtube = require('youtube-api'); // tslint:disable-line no-var-requires
 const youtubedl = require('youtube-dl'); // tslint:disable-line no-var-requires
@@ -30,11 +28,14 @@ export class YoutubeController {
       if (size(videos) <= 0) finishResponse(videos);
       youtube.downloadVideos(map(videos, (o: any) =>
         ({
+          description: o.snippet.description,
           id: o.snippet.resourceId.videoId,
-          url: `http://www.youtube.com/watch?v=${o.snippet.resourceId.videoId}`
+          publishedAt: o.snippet.resourceId.publishedAt,
+          title: o.snippet.resourceId.title,
+          youtubeUrl: `http://www.youtube.com/watch?v=${o.snippet.resourceId.videoId}`
         })
-      )).then(() => {
-        finishResponse(videos);
+      ) as any).then((data: IVideo[]) => {
+        finishResponse(data);
       });
     }, (err) => {
       res.status(500).json(err);
@@ -69,22 +70,21 @@ export class YoutubeController {
     });
   }
 
-  private downloadVideos(videos: any): Promise<object> {
-    return new Promise<object>((resolve, rej) => {
+  private downloadVideos(videos: any): Promise<any> {
+    return new Promise<any>((resolve, rej) => {
       each(videos, (video: any, callback: any) => {
         const stream = new streamingS3(
-          youtubedl(video.url, ['-x', '--audio-format', 'mp3'], { cwd: __dirname }),
+          youtubedl(video.youtubeUrl, ['-x', '--audio-format', 'mp3'], { cwd: __dirname }),
           { accessKeyId: process.env.S3_KEY, secretAccessKey: process.env.S3_SECRET },
-          { Bucket: 'example.streaming-s3.com', Key: `{$video.id}.mp3`, ContentType: 'audio/mpeg' },
-          (e: any, resp: any, stats: any) => {
+          { Bucket: 'articuno', Key: `${video.id}.mp3`, ContentType: 'audio/mpeg' },
+          (e: any, resp: any) => {
             if (e) rej(e);
-            console.log('Upload stats: ', stats);
-            console.log('Upload successful: ', resp);
+            video.url = resp.Location;
             callback();
           });
       }, (err: any) => {
         if (err) rej(err);
-        resolve();
+        resolve(videos);
       });
     });
   }
