@@ -13,6 +13,6 @@ Get, convert and store all episodes of The All Out Show from Youtube
 
 1. Run `npm install` to install server dependencies.
 
-2. Run `heroku config:get CLOUDINARY_URL -s >> .env && heroku config:get GOOGLE_API -s >> .env && heroku config:get MONGODB_URI -s >> .env --app articuno1` to install Heroku Environment Variables.
+2. Run `heroku config:get GOOGLE_API -s >> .env --app articuno1 && heroku config:get S3_KEY -s >> .env --app articuno1 && heroku config:get S3_SECRET -s >> .env --app articuno1 && heroku config:get MONGODB_URI -s >> .env --app articuno1` to install Heroku Environment Variables.
 
 3. Run `nf run npm run watch` to start the development server.

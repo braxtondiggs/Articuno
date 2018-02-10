@@ -1,5 +1,6 @@
 'use strict';
 import * as express from 'express';
+import { connect } from 'mongoose';
 import YoutubeRouter from './endpoints/youtube';
 
 class App {
@@ -8,6 +9,7 @@ class App {
     this.express = express();
     this.middleware();
     this.routes();
+    this.config();
   }
 
   private middleware(): void {
@@ -16,6 +18,10 @@ class App {
 
   private routes(): void {
     this.express.use('/api/youtube', YoutubeRouter);
+  }
+
+  private config(): void {
+    connect(process.env.MONGODB_URI);
   }
 }
 export default new App().express;
