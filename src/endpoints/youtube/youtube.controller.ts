@@ -2,6 +2,7 @@
 import { each } from 'async';
 import { NextFunction, Request, Response } from 'express';
 import { forEach, includes, map, reject, size, slice } from 'lodash';
+import * as request from 'request';
 import { IVideo, Video } from '../../schemas/video';
 const Youtube = require('youtube-api'); // tslint:disable-line no-var-requires
 const youtubedl = require('youtube-dl'); // tslint:disable-line no-var-requires
@@ -18,24 +19,26 @@ export class YoutubeController {
   public getFeed(req: Request, res: Response, next: NextFunction) {
     const youtube = new YoutubeController();
     function finishResponse(videos: IVideo[]) {
-      // https://nosnch.in/2bee449f94
-      res.json({ added: videos, size: size(videos) });
+      request.get('https://nosnch.in/2bee449f94', () => res.json({ added: videos, size: size(videos) }));
     }
     Promise.all([youtube.channelsListById(), youtube.getAllVideos()]).then((response) => {
       const videos = slice(reject(response[0], (o: any) =>
         includes(map(response[1] as IVideo[], 'id'), o.snippet.resourceId.videoId)
-      ), 0, 1);
+      ), 0, 10);
       if (size(videos) <= 0) finishResponse(videos);
       youtube.downloadVideos(map(videos, (o: any) =>
         ({
           description: o.snippet.description,
           id: o.snippet.resourceId.videoId,
-          publishedAt: o.snippet.resourceId.publishedAt,
-          title: o.snippet.resourceId.title,
+          publishedAt: o.snippet.publishedAt,
+          title: o.snippet.title,
           youtubeUrl: `http://www.youtube.com/watch?v=${o.snippet.resourceId.videoId}`
         })
       ) as any).then((data: IVideo[]) => {
-        finishResponse(data);
+        Video.create(data, (err: any) => {
+          if (err) res.status(500).json(err);
+          finishResponse(data);
+        });
       });
     }, (err) => {
       res.status(500).json(err);
