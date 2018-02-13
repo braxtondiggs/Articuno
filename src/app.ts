@@ -21,7 +21,7 @@ class App {
   }
 
   private config(): void {
-    connect(process.env.MONGODB_URI);
+    connect(process.env.MONGODB_URI as string);
   }
 }
 export default new App().express;

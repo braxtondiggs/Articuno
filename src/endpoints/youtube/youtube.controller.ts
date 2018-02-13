@@ -24,8 +24,8 @@ export class YoutubeController {
     Promise.all([youtube.channelsListById(), youtube.getAllVideos()]).then((response) => {
       const videos = slice(reject(response[0], (o: any) =>
         includes(map(response[1] as IVideo[], 'id'), o.snippet.resourceId.videoId)
-      ), 0, 10);
-      if (size(videos) <= 0) finishResponse(videos);
+      ), 0, 3);
+      if (size(videos) <= 0) { return finishResponse(videos); }
       youtube.downloadVideos(map(videos, (o: any) =>
         ({
           description: o.snippet.description,
@@ -36,12 +36,13 @@ export class YoutubeController {
         })
       ) as any).then((data: IVideo[]) => {
         Video.create(data, (err: any) => {
-          if (err) res.status(500).json(err);
+          if (err) { res.status(500).json(err); return next(err); }
           finishResponse(data);
         });
       });
     }, (err) => {
       res.status(500).json(err);
+      return next(err);
     });
   }
 
@@ -54,6 +55,7 @@ export class YoutubeController {
       }, (err: object, channelInfo: any) => {
         if (err) rej(err);
         Youtube.playlistItems.list({
+          maxResults: 50,
           part: 'snippet',
           playlistId: channelInfo.items[0].contentDetails.relatedPlaylists.uploads
         }, (_err: object, response: any) => {

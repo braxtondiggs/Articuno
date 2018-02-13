@@ -11,7 +11,7 @@ export interface IVideo extends Document {
 
 export const VideoSchema: Schema = new Schema({
   description: {
-    required: true,
+    required: false,
     type: String
   },
   id: {
