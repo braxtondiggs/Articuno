@@ -24,7 +24,7 @@ export class YoutubeController {
     Promise.all([youtube.channelsListById(), youtube.getAllVideos()]).then((response) => {
       const videos = slice(reject(response[0], (o: any) =>
         includes(map(response[1] as IVideo[], 'id'), o.snippet.resourceId.videoId)
-      ), 0, 3);
+      ), 0, 1);
       if (size(videos) <= 0) { return finishResponse(videos); }
       youtube.downloadVideos(map(videos, (o: any) =>
         ({
