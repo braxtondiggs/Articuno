@@ -30,13 +30,14 @@
     "@types/request": "^2.47.0",
     "async": "^2.6.0",
     "express": "^4.16.2",
+    "fluent-ffmpeg": "^2.1.2",
     "lodash": "^4.17.5",
     "mongoose": "^5.0.4",
     "request": "^2.83.0",
     "streaming-s3": "^0.4.4",
     "typescript": "^2.7.1",
     "youtube-api": "^2.0.9",
-    "youtube-dl": "^1.12.2"
+    "ytdl-core": "^0.20.2"
   },
   "devDependencies": {
     "husky": "^0.15.0-rc.8",

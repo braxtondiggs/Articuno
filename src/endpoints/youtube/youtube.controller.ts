@@ -1,12 +1,13 @@
 'use strict';
-import { each } from 'async';
+import { each, whilst } from 'async';
 import { NextFunction, Request, Response } from 'express';
-import { forEach, includes, map, reject, size, slice } from 'lodash';
+import { forEach, includes, isNull, isUndefined, map, reject, size, slice, union } from 'lodash';
 import * as request from 'request';
 import { IVideo, Video } from '../../schemas/video';
 const Youtube = require('youtube-api'); // tslint:disable-line no-var-requires
-const youtubedl = require('youtube-dl'); // tslint:disable-line no-var-requires
+const ytdl = require('ytdl-core'); // tslint:disable-line no-var-requires
 const streamingS3 = require('streaming-s3'); // tslint:disable-line no-var-requires
+const ffmpeg = require('fluent-ffmpeg'); // tslint:disable-line no-var-requires
 
 export class YoutubeController {
   constructor() {
@@ -48,6 +49,26 @@ export class YoutubeController {
 
   private channelsListById(): Promise<object> {
     return new Promise<object>((resolve, rej) => {
+      let pageToken: string;
+      let items: object[] = [];
+      whilst(
+        () => !isNull(pageToken),
+        (callback: any) => {
+          this.paginateChannel(pageToken).then((response: any) => {
+            pageToken = !isUndefined(response.nextPageToken) ? response.nextPageToken : null;
+            items = union(items, response.items);
+            callback();
+          });
+        },
+        (err: any) => {
+          if (err) return rej(err);
+          return resolve(items);
+        });
+    });
+  }
+
+  private paginateChannel(token: string): Promise<object> {
+    return new Promise<object>((resolve, rej) => {
       Youtube.channels.list({
         id: 'UCCVoBkpTwqNECizPG9snwGQ',
         order: 'date',
@@ -56,11 +77,12 @@ export class YoutubeController {
         if (err) rej(err);
         Youtube.playlistItems.list({
           maxResults: 50,
+          pageToken: token,
           part: 'snippet',
           playlistId: channelInfo.items[0].contentDetails.relatedPlaylists.uploads
         }, (_err: object, response: any) => {
           if (_err) rej(_err);
-          resolve(response.items);
+          resolve(response);
         });
       });
     });
@@ -79,7 +101,7 @@ export class YoutubeController {
     return new Promise<any>((resolve, rej) => {
       each(videos, (video: any, callback: any) => {
         const stream = new streamingS3(
-          youtubedl(video.youtubeUrl, ['-x', '--audio-format', 'mp3'], { cwd: __dirname }),
+          new ffmpeg({ source: ytdl(video.youtubeUrl) }).toFormat('mp3').audioBitrate(64).pipe(),
           { accessKeyId: process.env.S3_KEY, secretAccessKey: process.env.S3_SECRET },
           { Bucket: 'articuno', Key: `${video.id}.mp3`, ContentType: 'audio/mpeg' },
           (e: any, resp: any) => {
@@ -87,6 +109,14 @@ export class YoutubeController {
             video.url = resp.Location;
             callback();
           });
+
+        stream.on('finished', (resp: any, stats: any) => {
+          console.log('Upload finished: ', resp);
+        });
+
+        stream.on('error', (e: any) => {
+          console.log('Upload error: ', e);
+        });
       }, (err: any) => {
         if (err) rej(err);
         resolve(videos);
