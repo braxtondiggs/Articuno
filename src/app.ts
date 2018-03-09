@@ -17,7 +17,7 @@ class App {
 
   public getFeed() {
     function finishResponse(videos: IVideo[]) {
-      request.get('https://nosnch.in/2bee449f94', () => {
+      request.get('https://nosnch.in/85615cee8d', () => {
         console.log('app:finalOuput', { added: videos, size: size(videos) });
       });
     }
