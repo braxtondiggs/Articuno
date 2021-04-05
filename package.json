@@ -12,13 +12,14 @@
   "bugs": {
     "url": "https://github.com/braxtondiggs/Articuno/issues"
   },
-
   "scripts": {
-    "build": "rimraf outputs/* && rimraf dist/* && tsc --outDir dist",
+    "clean": "rimraf outputs/* && rimraf dist/*",
+    "build": "npm run clean && tsc --outDir dist",
     "start": "npm run build && node dist/index.js"
   },
   "homepage": "https://github.com/braxtondiggs/Articuno#readme",
   "dependencies": {
+    "firebase-admin": "^9.6.0",
     "lodash": "^4.17.21",
     "puppeteer-stream": "^2.0.3"
   },
