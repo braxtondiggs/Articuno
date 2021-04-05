@@ -49,7 +49,7 @@ var serviceAccount = require("../serviceAccountKey.json");
             let progress = 0;
             const progressbar = setInterval(async () => {
                 const width = await page.$eval('#current-listening-position', el => el.getAttribute('style'));
-                progress = _.chain(width).split('width: ', 2).last().replace('%;', '').toNumber().value();
+                progress = _.chain(width).split('width: ', 2).last().replace('%;', '').toNumber().round().value();
 
                 if (progress === 100) {
                     await stream.destroy();
