@@ -1,14 +1,14 @@
-const { launch, getStream } = require("puppeteer-stream");
 import * as fs from 'fs';
 import * as _ from 'lodash';
-import * as admin from "firebase-admin";
-var serviceAccount = require("../serviceAccountKey.json");
+import * as admin from 'firebase-admin';
+const { launch, getStream } = require('puppeteer-stream');
+const serviceAccount = require('../serviceAccountKey.json');
 
 (async () => {
     try {
         admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-            storageBucket: "bulbasaur-bfb64.appspot.com"
+            credential: admin.credential.cert(serviceAccount.firebase),
+            storageBucket: 'bulbasaur-bfb64.appspot.com'
         });
 
         const browser = await launch({
@@ -18,8 +18,8 @@ var serviceAccount = require("../serviceAccountKey.json");
 
         await page.goto('https://player.siriusxm.com/login');
 
-        await page.type('#username', '');
-        await page.type('#password', '');
+        await page.type('#username', serviceAccount.sirius.email);
+        await page.type('#password', serviceAccount.sirius.password);
 
         await page.click('.login-button');
         await page.waitForNavigation({ waitUntil: 'networkidle2' });
@@ -43,7 +43,7 @@ var serviceAccount = require("../serviceAccountKey.json");
 
         stream.pipe(file);
 
-        console.log("recording");
+        console.log('recording');
 
         await new Promise((resolve, _reject) => {
             let progress = 0;
@@ -65,10 +65,10 @@ var serviceAccount = require("../serviceAccountKey.json");
                 contentType: 'audio/webm'
             },
             public: true,
-            validation: "md5"
+            validation: 'md5'
         });
 
-        console.log("finished");
+        console.log('finished');
 
         // Close the browser, we no longer need it
         await browser.close();
@@ -76,6 +76,4 @@ var serviceAccount = require("../serviceAccountKey.json");
     } catch (e) {
         console.log(e);
     }
-
-
 })();
