@@ -12,10 +12,12 @@ const serviceAccount = require('../serviceAccountKey.json');
         });
 
         const browser = await launch({
-            executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+            // executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' - M1
+            executablePath: '/usr/bin/chromium-browser'
         });
+        
         const page = await browser.newPage();
-
+        await page.setDefaultNavigationTimeout(0); 
         await page.goto('https://player.siriusxm.com/login');
 
         await page.type('#username', serviceAccount.sirius.email);
