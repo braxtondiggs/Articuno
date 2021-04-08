@@ -13,17 +13,19 @@
     "url": "https://github.com/braxtondiggs/Articuno/issues"
   },
   "scripts": {
-    "clean": "rimraf outputs/* && rimraf dist/*",
+    "clean": "rimraf output/* && rimraf dist/*",
     "build": "npm run clean && tsc --outDir dist",
     "start": "npm run build && node dist/index.js"
   },
   "homepage": "https://github.com/braxtondiggs/Articuno#readme",
   "dependencies": {
+    "axios": "^0.21.1",
     "firebase-admin": "^9.6.0",
     "lodash": "^4.17.21",
     "puppeteer-stream": "^2.0.3"
   },
   "devDependencies": {
+    "@types/axios": "^0.14.0",
     "@types/lodash": "^4.14.168",
     "@types/node": "^14.14.37",
     "@types/puppeteer": "^5.4.3",

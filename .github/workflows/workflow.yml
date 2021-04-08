@@ -3,7 +3,7 @@ name: Articuno CI
 on:
   push:
     branches:
-      - main
+      - master
 jobs:
   build:
     name: Deploy
@@ -15,10 +15,10 @@ jobs:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         port: ${{ secrets.PORT }}
-        passphrase: ${{ secrets.PASSPHRASE }}
+        password: ${{ secrets.PASSWORD }}
         overwrite: true
         source: "./"
-        target: "./Articuno"
+        target: "~/Articuno"
     - name: Execute Commands
       uses: appleboy/ssh-action@master
       with:
@@ -29,3 +29,4 @@ jobs:
         script: |
           cd Articuno
           npm i
+          npm run build

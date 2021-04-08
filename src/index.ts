@@ -1,3 +1,4 @@
+import axios from 'axios';
 import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as admin from 'firebase-admin';
@@ -17,7 +18,7 @@ const serviceAccount = require('../serviceAccountKey.json');
         });
         
         const page = await browser.newPage();
-        await page.setDefaultNavigationTimeout(0); 
+        await page.setDefaultNavigationTimeout(600000); //10 mins 
         await page.goto('https://player.siriusxm.com/login');
 
         await page.type('#username', serviceAccount.sirius.email);
@@ -28,19 +29,22 @@ const serviceAccount = require('../serviceAccountKey.json');
 
         await page.goto('https://player.siriusxm.com/favorites/shows');
         await page.waitForNavigation({ waitUntil: 'networkidle2' });
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(5000);
 
         await page.click('.tile-wrapper');
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(1000);
 
         await page.click('.tile-list__item:nth-child(1) button.center-column');
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(1000);
 
         await page.click('.play-pause-btn');
 
         const title = await page.$eval('.info-container__title span', el => el.innerText);
+        const dir = 'output';
 
-        const file = fs.createWriteStream(`./outputs/${encodeURIComponent(title)}.webm`);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+
+        const file = fs.createWriteStream(`./${dir}/${encodeURIComponent(title)}.webm`);
         const stream = await getStream(page, { audio: true, video: false, mimeType: 'audio/webm' });
 
         stream.pipe(file);
@@ -62,7 +66,7 @@ const serviceAccount = require('../serviceAccountKey.json');
             }, 1000);
         });
 
-        await admin.storage().bucket().upload(`./outputs/${encodeURIComponent(title)}.webm`, {
+        await admin.storage().bucket().upload(`./${dir}/${encodeURIComponent(title)}.webm`, {
             destination: `articuno/${encodeURIComponent(title)}.webm`, metadata: {
                 contentType: 'audio/webm'
             },
@@ -71,7 +75,7 @@ const serviceAccount = require('../serviceAccountKey.json');
         });
 
         console.log('finished');
-
+        await axios.get('https://hc-ping.com/dcb82fad-fed8-4352-8766-195d0a7394e7');
         // Close the browser, we no longer need it
         await browser.close();
 

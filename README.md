@@ -1,6 +1,6 @@
 # Articuno ![Articuno](cryptonym.png)
 
-Get, convert and store all episodes of The All Out Show from Youtube
+Retrive and store all episodes of The All Out Show
 
 ## Build & Development
 
