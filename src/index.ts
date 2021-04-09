@@ -1,85 +1,92 @@
 import axios from 'axios';
 import * as fs from 'fs';
 import * as _ from 'lodash';
+import * as rimraf from 'rimraf';
+import * as cron from 'node-cron';
 import * as admin from 'firebase-admin';
 const { launch, getStream } = require('puppeteer-stream');
 const serviceAccount = require('../serviceAccountKey.json');
 
-(async () => {
-    try {
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount.firebase),
-            storageBucket: 'bulbasaur-bfb64.appspot.com'
-        });
+cron.schedule('30 5 * * 2-6', () => {
+    (async () => {
+        try {
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount.firebase),
+                storageBucket: 'bulbasaur-bfb64.appspot.com'
+            });
 
-        const browser = await launch({
-            // executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' - M1
-            executablePath: '/usr/bin/chromium-browser'
-        });
-        
-        const page = await browser.newPage();
-        await page.setDefaultNavigationTimeout(600000); //10 mins 
-        await page.goto('https://player.siriusxm.com/login');
+            const browser = await launch({
+                // executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' // m1
+                executablePath: '/usr/bin/chromium-browser'
+            });
 
-        await page.type('#username', serviceAccount.sirius.email);
-        await page.type('#password', serviceAccount.sirius.password);
+            const page = await browser.newPage();
+            await page.setDefaultNavigationTimeout(600000); //10 mins 
+            await page.goto('https://player.siriusxm.com/login');
 
-        await page.click('.login-button');
-        await page.waitForNavigation({ waitUntil: 'networkidle2' });
+            await page.type('#username', serviceAccount.sirius.email);
+            await page.type('#password', serviceAccount.sirius.password);
 
-        await page.goto('https://player.siriusxm.com/favorites/shows');
-        await page.waitForNavigation({ waitUntil: 'networkidle2' });
-        await page.waitForTimeout(5000);
+            await page.click('.login-button');
+            await page.waitForNavigation({ waitUntil: 'networkidle2' });
 
-        await page.click('.tile-wrapper');
-        await page.waitForTimeout(1000);
+            await page.goto('https://player.siriusxm.com/favorites/shows');
+            await page.waitForNavigation({ waitUntil: 'networkidle2' });
+            await page.waitForTimeout(5000);
 
-        await page.click('.tile-list__item:nth-child(1) button.center-column');
-        await page.waitForTimeout(1000);
+            await page.click('.tile-wrapper');
+            await page.waitForTimeout(1000);
 
-        await page.click('.play-pause-btn');
+            await page.click('.tile-list__item:nth-child(1) button.center-column');
+            await page.waitForTimeout(1000);
 
-        const title = await page.$eval('.info-container__title span', el => el.innerText);
-        const dir = 'output';
+            await page.click('.play-pause-btn');
 
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+            const title = await page.$eval('.info-container__title span', el => el.innerText);
+            const dir = 'output';
 
-        const file = fs.createWriteStream(`./${dir}/${encodeURIComponent(title)}.webm`);
-        const stream = await getStream(page, { audio: true, video: false, mimeType: 'audio/webm' });
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir);
 
-        stream.pipe(file);
+            const file = fs.createWriteStream(`./${dir}/${encodeURIComponent(title)}.webm`);
+            const stream = await getStream(page, { audio: true, video: false, mimeType: 'audio/webm' });
 
-        console.log('recording');
+            stream.pipe(file);
 
-        await new Promise((resolve, _reject) => {
-            let progress = 0;
-            const progressbar = setInterval(async () => {
-                const width = await page.$eval('#current-listening-position', el => el.getAttribute('style'));
-                progress = _.chain(width).split('width: ', 2).last().replace('%;', '').toNumber().round().value();
+            console.log('recording');
 
-                if (progress === 100) {
-                    await stream.destroy();
-                    file.close();
-                    clearInterval(progressbar);
-                    return resolve('success');
-                }
-            }, 1000);
-        });
+            await new Promise((resolve, _reject) => {
+                let progress = 0;
+                const progressbar = setInterval(async () => {
+                    const width = await page.$eval('#current-listening-position', el => el.getAttribute('style'));
+                    progress = _.chain(width).split('width: ', 2).last().replace('%;', '').toNumber().round().value();
 
-        await admin.storage().bucket().upload(`./${dir}/${encodeURIComponent(title)}.webm`, {
-            destination: `articuno/${encodeURIComponent(title)}.webm`, metadata: {
-                contentType: 'audio/webm'
-            },
-            public: true,
-            validation: 'md5'
-        });
+                    if (progress === 100) {
+                        await stream.destroy();
+                        file.close();
+                        clearInterval(progressbar);
+                        return resolve('success');
+                    }
+                }, 1000);
+            });
 
-        console.log('finished');
-        await axios.get('https://hc-ping.com/dcb82fad-fed8-4352-8766-195d0a7394e7');
-        // Close the browser, we no longer need it
-        await browser.close();
+            await admin.storage().bucket().upload(`./${dir}/${encodeURIComponent(title)}.webm`, {
+                destination: `articuno/${encodeURIComponent(title)}.webm`, metadata: {
+                    contentType: 'audio/webm'
+                },
+                public: true,
+                validation: 'md5'
+            });
 
-    } catch (e) {
-        console.log(e);
-    }
-})();
+            console.log('finished');
+
+            await rimraf.sync(dir);
+
+            await axios.get('https://hc-ping.com/dcb82fad-fed8-4352-8766-195d0a7394e7');
+            // Close the browser, we no longer need it
+            await browser.close();
+
+        } catch (e) {
+            console.log(e);
+        }
+    })();
+});
