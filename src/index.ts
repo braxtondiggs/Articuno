@@ -7,16 +7,16 @@ import * as admin from 'firebase-admin';
 const { launch, getStream } = require('puppeteer-stream');
 const serviceAccount = require('../serviceAccountKey.json');
 
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount.firebase),
+    storageBucket: 'bulbasaur-bfb64.appspot.com'
+});
+
 cron.schedule('30 5 * * 2-6', () => {
     (async () => {
         try {
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount.firebase),
-                storageBucket: 'bulbasaur-bfb64.appspot.com'
-            });
-
             const browser = await launch({
-                // executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' // m1
+                //executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' // m1
                 executablePath: '/usr/bin/chromium-browser'
             });
 
