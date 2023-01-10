@@ -20,7 +20,7 @@
   "homepage": "https://github.com/braxtondiggs/Articuno#readme",
   "dependencies": {
     "axios": "^0.21.1",
-    "firebase-admin": "^9.6.0",
+    "firebase-admin": "^11.4.1",
     "lodash": "^4.17.21",
     "node-cron": "^3.0.0",
     "puppeteer-stream": "^2.0.3"
